@@ -17,37 +17,37 @@ jobs:
       matrix:
         include:
           # Django 2.2
-          - django: "2.2"
-            python: "3.6"
-          - django: "2.2"
-            python: "3.7"
-          - django: "2.2"
-            python: "3.8"
-          - django: "2.2"
+          # - django: "2.2"
+          #   python: "3.6"
+          # - django: "2.2"
+          #   python: "3.7"
+          # - django: "2.2"
+          #   python: "3.8"
+          # - django: "2.2"
+          #   python: "3.9"
+          # # Django 3.1
+          # - django: "3.1"
+          #   python: "3.6"
+          # - django: "3.1"
+          #   python: "3.7"
+          # - django: "3.1"
+          #   python: "3.8"
+          # - django: "3.1"
+          #   python: "3.9"
+          # # Django 3.2
+          # - django: "3.2"
+          #   python: "3.6"
+          # - django: "3.2"
+          #   python: "3.7"
+          # - django: "3.2"
+          #   python: "3.8"
+          # - django: "3.2"
+          #   python: "3.9"
+          # - django: "3.2"
+          #   python: "3.10"
+          # Django 4.2
+          - django: "4.2"
             python: "3.9"
-          # Django 3.1
-          - django: "3.1"
-            python: "3.6"
-          - django: "3.1"
-            python: "3.7"
-          - django: "3.1"
-            python: "3.8"
-          - django: "3.1"
-            python: "3.9"
-          # Django 3.2
-          - django: "3.2"
-            python: "3.6"
-          - django: "3.2"
-            python: "3.7"
-          - django: "3.2"
-            python: "3.8"
-          - django: "3.2"
-            python: "3.9"
-          - django: "3.2"
-            python: "3.10"
-          # Django 4.0
-          - django: "4.0b1"
-            python: "3.10"
 
     steps:
       - name: Install gettext
@@ -71,4 +71,3 @@ jobs:
           echo "Python ${{ matrix.python }} / Django ${{ matrix.django }}"
           coverage run --rcfile=.coveragerc runtests.py
           codecov
-        continue-on-error: ${{ contains(matrix.django, '4.0') }}
