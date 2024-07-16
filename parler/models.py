@@ -321,8 +321,11 @@ class TranslatableModelMixin:
             )
             for field, value in model_fields.items():
                 try:
-                    setattr(translation, field, value)
-                except TypeError:
+                    # Fixed FileField clearing.
+                    # See: https://github.com/django-parler/django-parler/issues/326
+                    model_field = parler_meta.model._meta.get_field(field)
+                    model_field.save_form_data(translation, value)
+                except (ValueError, TypeError) as e:
                     # TypeError signals a many to many field. We can't set it like the other attributes, so
                     # add to our own glued variable.
                     deferred_many_to_many = getattr(translation, "deferred_many_to_many", {})
