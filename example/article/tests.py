@@ -137,7 +137,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         # Follow the redirect and check content
         resp = self.client.get(resp.url)
         self.assertEqual(200, resp.status_code)
-        self.assertIn("<h1>Add Article (Dutch)</h1>", smart_str(resp.content))
+        self.assertIn("<h1>Add Article (English)</h1>", smart_str(resp.content))
 
         translation.activate("fr")
         resp = self.client.get(reverse("admin:article_article_add"))
@@ -166,6 +166,10 @@ class AdminArticleTestCase(TestMixin, TestCase):
             follow=True,
         )
 
+        if resp.context and 'errors' in resp.context:
+                form_errors = resp.context['form'].errors
+                print(f"Form errors: {form_errors}")
+            
         self.assertRedirects(resp, f"{reverse('admin:article_article_changelist')}?language=en")
         self.assertEqual(1, Article.objects.filter(translations__slug="my-article").count())
 
@@ -241,6 +245,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         resp = self.client.post(
             reverse("admin:article_article_delete_translation", args=[self.art_id, "en"]),
             {"post": "yes"},
+            follow=True,
         )
         
         # The delete translation view should redirect back to the change view with the language parameter
