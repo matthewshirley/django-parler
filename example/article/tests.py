@@ -129,7 +129,13 @@ class AdminArticleTestCase(TestMixin, TestCase):
         # different, and not in the same order.
         self.assertEqual("nl", PARLER_LANGUAGES.get_first_language())
 
+        # Initial request without language parameter should redirect
         resp = self.client.get(reverse("admin:article_article_add"))
+        self.assertEqual(302, resp.status_code)
+        self.assertTrue(resp.url.endswith("?language=en"))
+
+        # Follow the redirect and check content
+        resp = self.client.get(resp.url)
         self.assertEqual(200, resp.status_code)
         self.assertIn("<h1>Add Article (Dutch)</h1>", smart_str(resp.content))
 
@@ -160,7 +166,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
             follow=True,
         )
 
-        self.assertRedirects(resp, reverse("admin:article_article_changelist"))
+        self.assertRedirects(resp, f"{reverse('admin:article_article_changelist')}?language=en")
         self.assertEqual(1, Article.objects.filter(translations__slug="my-article").count())
 
     def test_admin_change(self):
@@ -174,12 +180,13 @@ class AdminArticleTestCase(TestMixin, TestCase):
 
         translation.activate("en")
         resp = self.client.get(reverse("admin:article_article_change", args=[self.art_id]))
-        self.assertEqual(200, resp.status_code)
-        self.assertInContent("<h1>Change Article (Dutch)</h1>", resp)
+        
+        # Assert that a redirect occurs
+        self.assertEqual(302, resp.status_code)
+        self.assertTrue(resp.url.endswith("?language=en"))
 
-        resp = self.client.get(
-            reverse("admin:article_article_change", args=[self.art_id]), {"language": "en"}
-        )
+        # Follow the redirect
+        resp = self.client.get(resp.url)
         self.assertEqual(200, resp.status_code)
         self.assertInContent("<h1>Change Article (English)</h1>", resp)
         self.assertHTMLInContent('<input name="title" type="text" value="Cheese omelet">', resp)
@@ -193,7 +200,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         self.assertHTMLInContent('<input name="title" type="text" value="Cheese omelet">', resp)
 
         translation.activate("en")
-
+        
         resp = self.client.get(
             reverse("admin:article_article_change", args=[self.art_id]), {"language": "nl"}
         )
@@ -235,16 +242,18 @@ class AdminArticleTestCase(TestMixin, TestCase):
             reverse("admin:article_article_delete_translation", args=[self.art_id, "en"]),
             {"post": "yes"},
         )
-        self.assertRedirects(resp, reverse("admin:article_article_change", args=(self.art_id,)))
+        
+        # The delete translation view should redirect back to the change view with the language parameter
+        self.assertRedirects(resp, f"{reverse('admin:article_article_change', args=(self.art_id,))}?language=en")
         self.assertEqual(0, Article.objects.filter(translations__slug="cheese-omelet").count())
-
+        
         # try to delete something that is not there
         resp = self.client.post(
             reverse("admin:article_article_delete_translation", args=[self.art_id, "en"]),
             {"post": "yes"},
         )
         self.assertEqual(404, resp.status_code)
-
+        
         # try to delete the only remaining translation
         translation.activate("fr")
         resp = self.client.post(
