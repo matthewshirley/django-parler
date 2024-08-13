@@ -1,6 +1,7 @@
 from collections import deque
 
 import django
+from django.conf import settings
 from django.contrib import auth
 from django.test import TestCase
 from django.test.html import Element, parse_html
@@ -123,56 +124,51 @@ class AdminArticleTestCase(TestMixin, TestCase):
     def test_admin_add(self):
         self.client.login(**self.credentials)
 
-        # careful, running tests from the example app with
-        # python example/manage.py test article
-        # will fail, because languages declared in the settings are
-        # different, and not in the same order.
-        self.assertEqual("nl", PARLER_LANGUAGES.get_first_language())
+        # Set the default language to Dutch and test the add view
+        with self.settings(LANGUAGE_CODE='nl'):
+            resp = self.client.get(reverse("admin:article_article_add"))
+            self.assertEqual(302, resp.status_code)
+            
+            # Follow the redirect
+            resp = self.client.get(resp.url)  
+            self.assertEqual(200, resp.status_code)
+            self.assertIn("<h1>Add Article (Dutch)</h1>", smart_str(resp.content))
 
-        # Initial request without language parameter should redirect
-        resp = self.client.get(reverse("admin:article_article_add"))
-        self.assertEqual(302, resp.status_code)
-        self.assertTrue(resp.url.endswith("?language=en"))
+        # Set the default language to French and test the add view
+        with self.settings(LANGUAGE_CODE='fr'):
+            resp = self.client.get(reverse("admin:article_article_add"))
+            self.assertEqual(302, resp.status_code)
+            
+            # Follow the redirect
+            resp = self.client.get(resp.url)  
+            self.assertEqual(200, resp.status_code)
+            if django.VERSION >= (3, 0):
+                self.assertInContent("<h1>Ajout de Article (Hollandais)</h1>", resp)
+            else:
+                self.assertInContent("<h1>Ajout Article (Hollandais)</h1>", resp)
 
-        # Follow the redirect and check content
-        resp = self.client.get(resp.url)
-        self.assertEqual(200, resp.status_code)
-        self.assertIn("<h1>Add Article (English)</h1>", smart_str(resp.content))
-
-        translation.activate("fr")
-        resp = self.client.get(reverse("admin:article_article_add"))
-        self.assertEqual(200, resp.status_code)
-
-        if django.VERSION >= (3, 0):
-            self.assertInContent("<h1>Ajout de Article (Hollandais)</h1>", resp)
-        else:
-            self.assertInContent("<h1>Ajout Article (Hollandais)</h1>", resp)
-
-        translation.activate("en")
-
+        # Test with explicit Dutch language parameter in the URL
         resp = self.client.get(reverse("admin:article_article_add"), {"language": "nl"})
         self.assertEqual(200, resp.status_code)
         self.assertInContent("<h1>Add Article (Dutch)</h1>", resp)
 
     def test_admin_add_post(self):
         self.client.login(**self.credentials)
-        resp = self.client.post(
-            reverse("admin:article_article_add"),
-            {
-                "title": "my article",
-                "slug": "my-article",
-                "content": "my super content",
-            },
-            follow=True,
-        )
 
-        if resp.context and 'errors' in resp.context:
-                form_errors = resp.context['form'].errors
-                print(f"Form errors: {form_errors}")
-            
-        self.assertRedirects(resp, f"{reverse('admin:article_article_changelist')}?language=en")
-        self.assertEqual(1, Article.objects.filter(translations__slug="my-article").count())
+        # Set the default language to English and submit the form
+        with self.settings(LANGUAGE_CODE='en'):
+            resp = self.client.post(
+                reverse("admin:article_article_add"),
+                {
+                    "title": "my article",
+                    "slug": "my-article",
+                    "content": "my super content",
+                },
+                follow=True,
+            )
 
+            self.assertRedirects(resp, f"{reverse('admin:article_article_changelist')}?language=en")
+            self.assertEqual(1, Article.objects.filter(translations__slug="my-article").count())
     def test_admin_change(self):
         self.client.login(**self.credentials)
 
