@@ -132,7 +132,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
             # Follow the redirect
             resp = self.client.get(resp.url)  
             self.assertEqual(200, resp.status_code)
-            self.assertIn("<h1>Add Article (Dutch)</h1>", smart_str(resp.content))
+            self.assertIn("<h1>Article toevoegen (Nederlands)</h1>", smart_str(resp.content))
 
         # Set the default language to French and test the add view
         with self.settings(LANGUAGE_CODE='fr'):
@@ -158,7 +158,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
         # Set the default language to English and submit the form
         with self.settings(LANGUAGE_CODE='en'):
             resp = self.client.post(
-                reverse("admin:article_article_add"),
+                f"{reverse('admin:article_article_changelist')}?language=en",
                 {
                     "title": "my article",
                     "slug": "my-article",
@@ -169,6 +169,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
 
             self.assertRedirects(resp, f"{reverse('admin:article_article_changelist')}?language=en")
             self.assertEqual(1, Article.objects.filter(translations__slug="my-article").count())
+
     def test_admin_change(self):
         self.client.login(**self.credentials)
 
