@@ -47,6 +47,7 @@ from django.db import router, transaction
 from django.forms import Media
 from django.http import Http404, HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.urls import re_path, reverse
 from django.utils.encoding import force_str, iri_to_uri
 from django.utils.functional import cached_property
@@ -307,6 +308,24 @@ class TranslatableAdmin(BaseTranslatableAdmin, admin.ModelAdmin):
             form_class.language_code = self.get_form_language(request, obj)
 
         return form_class
+    
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        lang_code = settings.LANGUAGE_CODE
+
+        # Open the language tab corresponding to the environment language
+        if "language" not in request.GET:
+            return redirect(f"{request.path}?language={lang_code}")
+
+        return super().change_view(request, object_id, form_url)
+
+    def add_view(self, request, form_url="", extra_context=None):
+        lang_code = settings.LANGUAGE_CODE
+
+        # Open the language tab corresponding to the environment language
+        if "language" not in request.GET:
+            return redirect(f"{request.path}?language={lang_code}")
+
+        return super().add_view(request, form_url)
 
     def get_urls(self):
         """

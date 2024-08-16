@@ -129,12 +129,12 @@ class AdminArticleTestCase(TestMixin, TestCase):
         # different, and not in the same order.
         self.assertEqual("nl", PARLER_LANGUAGES.get_first_language())
 
-        resp = self.client.get(reverse("admin:article_article_add"))
+        resp = self.client.get(reverse("admin:article_article_add"), follow=True)
         self.assertEqual(200, resp.status_code)
         self.assertIn("<h1>Add Article (Dutch)</h1>", smart_str(resp.content))
 
         translation.activate("fr")
-        resp = self.client.get(reverse("admin:article_article_add"))
+        resp = self.client.get(reverse("admin:article_article_add"), follow=True)
         self.assertEqual(200, resp.status_code)
 
         if django.VERSION >= (3, 0):
@@ -144,7 +144,7 @@ class AdminArticleTestCase(TestMixin, TestCase):
 
         translation.activate("en")
 
-        resp = self.client.get(reverse("admin:article_article_add"), {"language": "nl"})
+        resp = self.client.get(reverse("admin:article_article_add") + "?language=nl", follow=True)
         self.assertEqual(200, resp.status_code)
         self.assertInContent("<h1>Add Article (Dutch)</h1>", resp)
 
